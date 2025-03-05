@@ -1,0 +1,5 @@
+colorama
+dearpygui
+requests
+pyperclip
+pillow
