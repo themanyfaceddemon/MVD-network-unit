@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug client",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "MVD-network-unit/mvd-network-unit.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--debug"
+            ]
+        },
+        {
+            "name": "No debug client",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "MVD-network-unit/mvd-network-unit.py",
+            "console": "integratedTerminal",
+        }        
+    ]
+}

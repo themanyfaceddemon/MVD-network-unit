@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build client",
+            "type": "shell",
+            "command": "pyinstaller",
+            "args": [
+                "mvd-network-unit.py",
+                "--add-data",
+                "data/fonts:data/fonts",
+                "--add-data",
+                "data/img:data/img",
+                "--icon=data/img/mvd-red.ico",
+                "-n",
+                "MVD network unit",
+                "--noconfirm"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}
