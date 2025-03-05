@@ -1,6 +1,6 @@
 colorama
 dearpygui
-requests
-pyperclip
 pillow
 pyinstaller
+pyperclip
+requests
