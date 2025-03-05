@@ -3,3 +3,4 @@ dearpygui
 requests
 pyperclip
 pillow
+pyinstaller
