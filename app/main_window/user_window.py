@@ -17,22 +17,25 @@ def create_user_window(user_id: str) -> None:
         )
         return
 
-    name_rus: str | None = user_data.get("nameRus")
-    name_eng: str | None = user_data.get("nameEng")
-    name_cs: str | None = user_data.get("cs")
-    race: str | None = user_data.get("race")
-    pob: str | None = user_data.get("pob")
-    goal: str | None = user_data.get("goal")
-    type: str | None = user_data.get("type")
-    model: str | None = user_data.get("model")
-    specialization: str | None = user_data.get("specialization")
-    photo_file = user_data.get("photo_file")
-    sex: str = "Мужской" if user_data.get("sex") == "male" else "Женский"
+    status = {
+        "alive": ("Жив", AppConfig.alive_color),
+        "dead": ("Мёртв", AppConfig.dead_color),
+        "missing": ("Пропал без вести", AppConfig.missing_color),
+        "on_review": ("На проверке", AppConfig.on_review_color),
+    }.get(user_data.get("status", None), ("Неизвестный статус", [255, 255, 255, 255]))
 
-    photo_path = None
-    if photo_file:
-        photo_path = ServerRequests.get_image(photo_file)
+    race = user_data.get("race", None)
+    name_rus = user_data.get("name_rus", None)
+    name_eng = user_data.get("name_eng", None)
+    name_cs = user_data.get("name_cs", None)
+    user_type = user_data.get("user_type", None)
+    model = user_data.get("model", None)
+    sex = "Мужской" if user_data.get("sex", None) == "male" else "Женский"
+    place_of_birth = user_data.get("place_of_birth", None)
+    specialization = user_data.get("specialization", None)
+    goal = user_data.get("goal", None)
 
+    photo_path = ServerRequests.get_image(user_id)
     if photo_path:
         width, height, _, data = dpg.load_image(str(photo_path))
         with dpg.texture_registry():
@@ -45,6 +48,17 @@ def create_user_window(user_id: str) -> None:
         no_title_bar=True,
         pos=[0, 0],
     ):
+        with dpg.group(horizontal=True) as gr:
+            dpg.add_text("Статус записи:")
+            dpg.add_text(status[0], color=status[1])
+
+        _add_ch_container_combo(
+            gr,
+            ["Жив", "Мёртв", "Пропал без вести", "На проверке"],
+            status[0],
+            "status",
+        )
+
         _add_uuid_section(user_id)
         _add_info_table(
             name_rus=name_rus,
@@ -53,13 +67,13 @@ def create_user_window(user_id: str) -> None:
             race=race,
         )
         _add_race_section(race)
-        _add_optional_sections(type=type, model=model, race=race)
+        _add_optional_sections(type=user_type, model=model, race=race)
         dpg.add_separator()
         _add_sex_section(sex)
         dpg.add_separator()
         _add_additional_info(
             "Место производства:" if race == "doll" else "Место рождения:",
-            pob,
+            place_of_birth,
             "pob",
         )
         _add_additional_info(
@@ -310,5 +324,13 @@ def _ch_callback(value: Any, tag_to_ch: str) -> None:
     if tag_to_ch == "sex":
         value = "male" if value == "Мужской" else "female"
 
-    ServerRequests.change_user_data(user_uuid, {tag_to_ch: value})
+    if tag_to_ch == "status":
+        value = {
+            "Жив": "alive",
+            "Мёртв": "dead",
+            "Пропал без вести": "missing",
+            "На проверке": "on_review",
+        }.get(value, None)
+
+    ServerRequests.change_user_data(user_uuid, **{tag_to_ch: value})
     create_user_window(user_uuid)

@@ -4,7 +4,6 @@ import traceback
 
 import dearpygui.dearpygui as dpg
 from systems import AppConfig
-from tools import FontManager
 
 
 class AppInitializer:
@@ -13,7 +12,7 @@ class AppInitializer:
         sys.excepthook = cls.global_exception_handler
         cls._init_dpg()
         cls._init_viewport()
-        FontManager.load_fonts()
+        cls.load_fonts()
         cls._theme_register()
         cls._reg_static_img()
         cls._setup_default_theme()
@@ -113,3 +112,17 @@ class AppInitializer:
             traceback.format_exception(exc_type, exc_value, exc_traceback)
         )
         logging.error("Необработанная ошибка системы:\n%s", error_message)
+
+    @classmethod
+    def load_fonts(cls):
+        font_base_path = AppConfig.data_fold / "fonts"
+        default_font_path = font_base_path / "Monocraft" / "Monocraft.otf"
+
+        with dpg.font_registry():
+            with dpg.font(str(default_font_path), 14) as default_font:
+                dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
+                dpg.add_font_range_hint(dpg.mvFontRangeHint_Cyrillic)
+                dpg.add_font_range(0x0391, 0x03C9)
+                dpg.add_font_range(0x2070, 0x209F)
+
+        dpg.bind_font(default_font)

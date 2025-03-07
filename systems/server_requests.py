@@ -15,7 +15,7 @@ class ServerRequests:
     _base_url: Final[str] = "http://194.87.94.191:7000"
 
     _session = requests.Session()
-    _session.headers.update({"X-App-Version": "1.0.0"})
+    _session.headers.update({"X-App-Version": "1.0.1"})
 
     _access: Set[str] = set()
 
@@ -301,23 +301,15 @@ class ServerRequests:
     @classmethod
     def get_image(
         cls,
-        file_name: str | None,
+        user_id: str | None,
         max_size: tuple = (1024, 1024),
     ) -> Path | None:
-        if file_name is None:
-            return None
-
-        file_path = Path(file_name)
-
-        try:
-            upload_index = file_path.parts.index("uploads")
-            relative_path = Path(*file_path.parts[upload_index + 1 :])
-        except ValueError:
+        if user_id is None:
             return None
 
         resp = cls._session.get(
             cls._base_url + "/user/data/image",
-            params={"filename": str(relative_path)},
+            params={"filename": user_id},
         )
         if resp.status_code != 200:
             return None
@@ -336,41 +328,37 @@ class ServerRequests:
             return None
 
     @classmethod
-    def get_need_approved(cls):
-        resp = cls._session.get(cls._base_url + "/user/queue/need_approved")
-        return resp.json()
-
-    @classmethod
-    def approve_queue(
+    def change_user_data(
         cls,
-        request_id: int,
-        approve: bool,
-        reason: str | None = None,
+        user_id: str,
+        status: Literal["alive", "dead", "missing", "on_review"] | None = None,
+        race: Literal["human", "doll", "halfhuman"] | None = None,
+        name_rus: str | None = None,
+        name_eng: str | None = None,
+        name_cs: str | None = None,
+        user_type: str | None = None,
+        model: str | None = None,
+        sex: Literal["male", "female"] | None = None,
+        place_of_birth: str | None = None,
+        specialization: str | None = None,
+        goal: str | None = None,
     ) -> int:
-        resp = cls._session.post(
-            cls._base_url + "/user/queue/approve",
-            json={
-                "request_id": request_id,
-                "approve": approve,
-                "reason": reason,
-            },
-        )
-
-        return resp.status_code
-
-    @classmethod
-    def get_user_queue(cls, username: str | None):
-        resp = cls._session.get(
-            cls._base_url + "/user/queue/user_queue",
-            params={"username": username or cls.cur_username},
-        )
-        return resp.json()
-
-    @classmethod
-    def change_user_data(cls, user_id: str, updates: Dict[str, Any]) -> int:
         response = cls._session.post(
             cls._base_url + "/user/data/change",
-            json={"user_id": user_id, "updates": updates},
+            json={
+                "user_id": user_id,
+                "status": status,
+                "race": race,
+                "name_rus": name_rus,
+                "name_eng": name_eng,
+                "name_cs": name_cs,
+                "user_type": user_type,
+                "model": model,
+                "sex": sex,
+                "place_of_birth": place_of_birth,
+                "specialization": specialization,
+                "goal": goal,
+            },
         )
 
         return response.status_code

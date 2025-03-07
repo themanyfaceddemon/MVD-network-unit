@@ -50,7 +50,7 @@ def _update_search_dict():
         return
 
     global search_dict_full
-    search_dict_full = {user["id"]: user for user in answer}
+    search_dict_full = {user["user_uuid"]: user for user in answer}
 
     _update_all_search_info()
 
@@ -61,16 +61,16 @@ def _update_all_search_info(sender=None, app_data=None):
 
     def get_display_name(user):
         parts = []
-        name_rus = user.get("nameRus") or None
-        name_eng = user.get("nameEng") or None
-        cs_name = user.get("cs") or None
+        name_rus = user.get("name_rus") or None
+        name_eng = user.get("name_eng") or None
+        name_cs = user.get("name_cs") or None
 
         if name_rus:
             parts.append(name_rus)
         if name_eng:
             parts.append(name_eng)
-        if cs_name:
-            parts.append(f"'{cs_name}'")
+        if name_cs:
+            parts.append(f"'{name_cs}'")
         return " | ".join(parts) or "Без имени"
 
     search_query = dpg.get_value("search_input_text").strip().lower()
@@ -82,12 +82,12 @@ def _update_all_search_info(sender=None, app_data=None):
             search_target = ""
             search_target += f"{str(user_id).lower()} "
 
-            if user.get("nameRus"):
-                search_target += user["nameRus"].lower() + " "
-            if user.get("nameEng"):
-                search_target += user["nameEng"].lower() + " "
-            if user.get("cs"):
-                search_target += user["cs"].lower() + " "
+            if user.get("name_rus"):
+                search_target += user["name_rus"].lower() + " "
+            if user.get("name_eng"):
+                search_target += user["name_eng"].lower() + " "
+            if user.get("name_cs"):
+                search_target += user["name_cs"].lower() + " "
 
             if all(term in search_target for term in search_terms):
                 items.append((get_display_name(user), user_id))

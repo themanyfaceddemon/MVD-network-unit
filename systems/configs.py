@@ -10,7 +10,6 @@ class AppConfig:
     img_fold = data_fold / "img"
     _config_data: Dict[str, Any] = {}
     _config_file = data_fold / "config.pkl"
-    
 
     server_data_update_time: int = 60
 
@@ -20,6 +19,10 @@ class AppConfig:
     green_color = [102, 204, 0, 255]
     male_color = [0, 206, 209, 255]
     female_color = [219, 112, 147, 255]
+    alive_color = [34, 139, 34, 255]
+    dead_color = [139, 0, 0, 255]
+    missing_color = [255, 215, 0, 255]
+    on_review_color = [138, 43, 226, 255]
 
     @classmethod
     def init(cls) -> None:

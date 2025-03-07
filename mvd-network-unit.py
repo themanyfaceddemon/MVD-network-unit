@@ -7,7 +7,6 @@ from typing import Any, Type
 
 from app import App, AppInitializer, AuthWindow
 from colorama import Fore, Style, init
-from error_message_tk import show_error_message_with_traceback
 from systems import AppConfig
 from tools import TimerManager, ViewportResizeManager
 
@@ -100,10 +99,10 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logging.info("Завершение работы...")
 
-    except Exception as e:
+    except Exception:
         # Я купил себе машину
         # Думал, круче не найти
         # Откатал на ней неделю
         # Сдохла, мать её ети
         logging.critical("Unhandled exception occurred.", exc_info=True)
-        show_error_message_with_traceback("Критическая ошибка системы", e)
+        input()

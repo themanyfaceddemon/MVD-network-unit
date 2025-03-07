@@ -2,10 +2,8 @@ import dearpygui.dearpygui as dpg
 from systems import AppConfig, ServerRequests
 from tools import TimerManager
 
-from .approve_tab import create_approve_tab
 from .create_tab import create_create_tab
 from .search_tab import create_search_tab
-from .status_tab import create_status_tab
 from .system_tab import create_system_tab
 from .unit_manage_tab import create_unit_manage_tab
 
@@ -78,21 +76,6 @@ class AppMainWindow:
                 label="Создать вкладку создания записей",
                 callback=create_create_tab,
                 show=ServerRequests.has_access("register_user"),
-                width=423,
-                parent="main_btn_group",
-            )
-
-            dpg.add_button(
-                label="Создать вкладку подтверждений записей",
-                callback=create_approve_tab,
-                show=ServerRequests.has_access("register_user_can_approved"),
-                width=423,
-                parent="main_btn_group",
-            )
-
-            dpg.add_button(
-                label="Создать вкладку проверки подтверждений записей",
-                callback=create_status_tab,
                 width=423,
                 parent="main_btn_group",
             )
