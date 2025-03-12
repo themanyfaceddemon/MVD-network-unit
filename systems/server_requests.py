@@ -15,7 +15,7 @@ class ServerRequests:
     _base_url: Final[str] = "http://194.87.94.191:7000"
 
     _session = requests.Session()
-    _session.headers.update({"X-App-Version": "1.0.1"})
+    _session.headers.update({"X-App-Version": "1.0.2"})
 
     _access: Set[str] = set()
 
@@ -187,6 +187,7 @@ class ServerRequests:
 
     # endregion
 
+    # region Регистрация записей
     @classmethod
     def create_human(
         cls,
@@ -222,6 +223,7 @@ class ServerRequests:
         cls,
         nameRus: str | None,
         nameEng: str | None,
+        cs: str | None,
         type: Literal["T", "A", "M"],
         model: str | None,
         sex: Literal["male", "female"],
@@ -237,6 +239,7 @@ class ServerRequests:
                 data={
                     "nameRus": nameRus,
                     "nameEng": nameEng,
+                    "cs": cs,
                     "type": type,
                     "model": model,
                     "sex": sex,
@@ -281,9 +284,19 @@ class ServerRequests:
 
         return resp.status_code
 
+    # endregion
+
     @classmethod
     def get_all_users(cls) -> List[Dict[str, str]]:
         resp = cls._session.get(cls._base_url + "/user/data/all_users")
+
+        return resp.json()
+
+    @classmethod
+    def get_user_names(cls, user_id: str) -> Dict[str, str]:
+        resp = cls._session.get(
+            cls._base_url + "/user/data/names", params={"user_id": user_id}
+        )
 
         return resp.json()
 
@@ -368,6 +381,24 @@ class ServerRequests:
         response = cls._session.post(
             cls._base_url + "/user/data/delete",
             json={"user_id": user_id},
+        )
+
+        return response.status_code
+
+    @classmethod
+    def add_doll_reg(cls, owner_uuid: str, doll_uuid: str) -> int:
+        response = cls._session.post(
+            cls._base_url + "/user/additional_data/doll_register/add",
+            json={"owner_uuid": owner_uuid, "doll_uuid": doll_uuid},
+        )
+
+        return response.status_code
+
+    @classmethod
+    def remove_doll_reg(cls, owner_uuid: str, doll_uuid: str) -> int:
+        response = cls._session.post(
+            cls._base_url + "/user/additional_data/doll_register/remove",
+            json={"owner_uuid": owner_uuid, "doll_uuid": doll_uuid},
         )
 
         return response.status_code

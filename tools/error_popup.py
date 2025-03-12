@@ -3,7 +3,7 @@ import dearpygui.dearpygui as dpg
 from .viewport_resize import ViewportResizeManager
 
 
-def create_error_popup(title: str, info: str):
+def create_popup_window(title: str, info: str):
     if not dpg.does_item_exist("error_warning_window"):
         with dpg.window(
             modal=True,

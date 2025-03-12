@@ -1,6 +1,6 @@
 import dearpygui.dearpygui as dpg
 from systems import AppConfig, ServerRequests
-from tools import ViewportResizeManager, create_error_popup
+from tools import ViewportResizeManager, create_popup_window
 
 from app.main_window import AppMainWindow
 
@@ -8,9 +8,17 @@ from app.main_window import AppMainWindow
 class AuthWindow:
     @classmethod
     def init(cls):
-        cls._create_login_window()
-
-        ViewportResizeManager.add_callback("login_window", cls._res_login_callback)
+        if AppConfig.get("remember_login", False):
+            cls._on_login_btn_click(
+                None,
+                None,
+                [
+                    AppConfig.get("remember_login_value", ""),
+                    AppConfig.get("remember_password_value", ""),
+                ],
+            )
+        else:
+            cls._create_login_window()
 
     @classmethod
     def _del_and_enter(cls):
@@ -28,16 +36,16 @@ class AuthWindow:
 
     @classmethod
     def _res_login_callback(cls, app_data) -> None:
-        dpg.set_item_pos("main_auth_header", [(app_data[2] - 171) / 2, 8])
+        dpg.set_item_pos("main_auth_header", [(app_data[2] - 171) * 0.5, 8])
 
         center_input_text = (app_data[2] - 408) * 0.5
         center_btn = (app_data[2] - 208) * 0.5
         dpg.set_item_pos("intput_text_auth_login", [center_input_text, 48])
         dpg.set_item_pos("intput_text_auth_password", [center_input_text, 78])
-        dpg.set_item_pos("login_btn", [center_btn, 118])
-        dpg.set_item_pos("open_tae_btn", [center_btn, 148])
+        dpg.set_item_pos("remember_login", [(app_data[2] - 195) * 0.5, 108])
+        dpg.set_item_pos("login_btns", [center_btn, 138])
 
-        dpg.set_item_pos("login_logo", [(app_data[2] - 256) / 2, 228])
+        dpg.set_item_pos("login_logo", [(app_data[2] - 256) * 0.5, 228])
 
     @classmethod
     def _create_login_window(cls):
@@ -66,28 +74,49 @@ class AuthWindow:
                 on_enter=True,
                 callback=cls._on_login_btn_click,
             )
-            dpg.add_button(
-                label="Войти",
-                width=208,
-                tag="login_btn",
-                callback=cls._on_login_btn_click,
+            with dpg.group(tag="login_btns"):
+                dpg.add_button(
+                    label="Войти",
+                    width=208,
+                    callback=cls._on_login_btn_click,
+                )
+                dpg.add_button(
+                    label="Использовать Т.А.В.",
+                    width=208,
+                    callback=cls._create_tae_window,
+                )
+
+            dpg.add_checkbox(
+                label="Автоматический вход",
+                tag="remember_login",
+                default_value=AppConfig.get("remember_login", False),
+                callback=lambda s, a, u: AppConfig.set("remember_login", a),
             )
-            dpg.add_button(
-                label="Использовать Т.А.В.",
-                width=208,
-                tag="open_tae_btn",
-                callback=cls._create_tae_window,
-            )
+            with dpg.tooltip(dpg.last_item()):
+                dpg.add_text("Автоматически входит в систему")
+
             dpg.add_image("mvd_img_256_256", tag="login_logo")
-            dpg.render_dearpygui_frame()
+            ViewportResizeManager.add_callback("login_window", cls._res_login_callback)
 
     @classmethod
     def _on_login_btn_click(cls, sender, app_data, user_data) -> None:
+        if sender is None:
+            code = ServerRequests.login(user_data[0].strip(), user_data[1].strip())
+            if code == 200:
+                cls._del_and_enter()
+            else:
+                AppConfig.set("remember_login", False)
+                AppConfig.pop("remember_login_value")
+                AppConfig.pop("remember_password_value")
+                cls._create_login_window()
+
+            return
+
         login: str = dpg.get_value("intput_text_auth_login")
         password: str = dpg.get_value("intput_text_auth_password")
 
         if login.startswith("CREATE-AUTH-"):
-            create_error_popup(
+            create_popup_window(
                 "Ошибка авторизации",
                 "Вы использовали Т.А.В в качестве КПК ID",
             )
@@ -95,6 +124,9 @@ class AuthWindow:
 
         code = ServerRequests.login(login.strip(), password.strip())
         if code == 200:
+            if AppConfig.get("remember_login", False):
+                AppConfig.set("remember_login_value", login)
+                AppConfig.set("remember_password_value", password)
             cls._del_and_enter()
             return
 
@@ -108,7 +140,7 @@ class AuthWindow:
             f"Сервер вернул неизвестную ошибку #{code}. Просьба связаться со старшими сотрудниками МВД для решения проблемы",
         )
 
-        create_error_popup("Ошибка авторизации", error_msg)
+        create_popup_window("Ошибка авторизации", error_msg)
 
     @classmethod
     def _del_tae_callback(cls):
@@ -164,11 +196,13 @@ class AuthWindow:
             dpg.add_input_text(
                 hint="Пароль",
                 tag="tae_password_1_input_text",
+                password=True,
                 width=408,
             )
             dpg.add_input_text(
                 hint="Повтор пароля",
                 tag="tae_password_2_input_text",
+                password=True,
                 width=408,
             )
 
@@ -195,23 +229,23 @@ class AuthWindow:
         password_2: str = dpg.get_value("tae_password_2_input_text")
 
         if not all([token, password_1, password_2]):
-            create_error_popup(
+            create_popup_window(
                 "Ошибка ввода Т.А.В",
                 "Поле с Т.А.В, или паролями не заполнено",
             )
             return
 
         if password_1 != password_2:
-            create_error_popup(
+            create_popup_window(
                 "Ошибка ввода Т.А.В",
                 "Пароли не совпадают",
             )
             return
 
         if not token.startswith("CREATE-AUTH-"):
-            create_error_popup(
+            create_popup_window(
                 "Ошибка ввода Т.А.В",
-                "Вы использовали токен создания в качестве КПК ID",
+                "Вы использовали НЕ токен создания в качестве КПК ID. Перепроверьте токен, вставив его повторно",
             )
             return
 
@@ -230,4 +264,4 @@ class AuthWindow:
             f"Сервер вернул неизвестную ошибку #{code}. Просьба связаться со старшими сотрудниками МВД для решения проблемы",
         )
 
-        create_error_popup("Ошибка авторизации", error_msg)
+        create_popup_window("Ошибка авторизации", error_msg)

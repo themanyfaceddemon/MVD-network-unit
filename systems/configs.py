@@ -2,7 +2,7 @@ import pickle
 from atexit import register
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Literal, TypeGuard
 
 
 class AppConfig:
@@ -48,17 +48,21 @@ class AppConfig:
         return cls._config_data.get(key, default)
 
     @classmethod
-    def has(cls, key: str) -> bool:
-        return key in cls._config_data
-
-    @classmethod
     def set(cls, key: str, value: Any):
         cls._config_data[key] = value
 
     @classmethod
-    def pop(cls, key: str):
-        cls._config_data.pop(key)
+    def pop(cls, key: str) -> Any:
+        if key in cls._config_data:
+            return cls._config_data.pop(key)
+
+        else:
+            return None
 
     @classmethod
     def get_game_time(cls) -> datetime:
         return datetime.now(UTC) + timedelta(365 * 40)
+
+    @staticmethod
+    def is_doll_model_value(value: str | None) -> TypeGuard[Literal["T", "A", "M"]]:
+        return value in {"T", "A", "M"}

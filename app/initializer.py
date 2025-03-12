@@ -12,7 +12,7 @@ class AppInitializer:
         sys.excepthook = cls.global_exception_handler
         cls._init_dpg()
         cls._init_viewport()
-        cls.load_fonts()
+        cls._load_fonts()
         cls._theme_register()
         cls._reg_static_img()
         cls._setup_default_theme()
@@ -37,29 +37,7 @@ class AppInitializer:
 
     @classmethod
     def _theme_register(cls):
-        with dpg.theme(tag="theme_low"):
-            with dpg.theme_component(dpg.mvProgressBar):
-                dpg.add_theme_color(
-                    dpg.mvThemeCol_PlotHistogram,
-                    (144, 255, 144),
-                    category=dpg.mvThemeCat_Core,
-                )
-
-        with dpg.theme(tag="theme_medium"):
-            with dpg.theme_component(dpg.mvProgressBar):
-                dpg.add_theme_color(
-                    dpg.mvThemeCol_PlotHistogram,
-                    (255, 255, 50),
-                    category=dpg.mvThemeCat_Core,
-                )
-
-        with dpg.theme(tag="theme_high"):
-            with dpg.theme_component(dpg.mvProgressBar):
-                dpg.add_theme_color(
-                    dpg.mvThemeCol_PlotHistogram,
-                    (255, 50, 50),
-                    category=dpg.mvThemeCat_Core,
-                )
+        pass
 
     @classmethod
     def _reg_static_img(cls):
@@ -114,7 +92,7 @@ class AppInitializer:
         logging.error("Необработанная ошибка системы:\n%s", error_message)
 
     @classmethod
-    def load_fonts(cls):
+    def _load_fonts(cls):
         font_base_path = AppConfig.data_fold / "fonts"
         default_font_path = font_base_path / "Monocraft" / "Monocraft.otf"
 

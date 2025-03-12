@@ -20,6 +20,10 @@ class AppMainWindow:
                 dpg.add_menu_item(
                     label="Закрыть программу", callback=lambda: dpg.stop_dearpygui()
                 )
+                dpg.add_menu_item(
+                    label="Забыть сохранённый пароль и ID КПК",
+                    callback=cls._clear_login_password_value,
+                )
 
             dpg.add_menu_item(label="|", enabled=False)
 
@@ -64,33 +68,41 @@ class AppMainWindow:
         if dpg.does_item_exist("main_btn_group"):
             dpg.delete_item("main_btn_group", children_only=True)
 
-            dpg.add_button(
-                label="Создать вкладку поиска",
-                callback=create_search_tab,
-                show=ServerRequests.has_access("get_db_data"),
-                width=423,
-                parent="main_btn_group",
-            )
+            with dpg.group(horizontal=True, parent="main_btn_group"):
+                with dpg.group(
+                    show=ServerRequests.has_access("get_db_data")
+                    and ServerRequests.has_access("register_user")
+                ):
+                    dpg.add_button(
+                        label="База данных",
+                        callback=create_search_tab,
+                        show=ServerRequests.has_access("get_db_data"),
+                        width=323,
+                    )
 
-            dpg.add_button(
-                label="Создать вкладку создания записей",
-                callback=create_create_tab,
-                show=ServerRequests.has_access("register_user"),
-                width=423,
-                parent="main_btn_group",
-            )
+                    dpg.add_button(
+                        label="Создание и регистрация",
+                        callback=create_create_tab,
+                        show=ServerRequests.has_access("register_user"),
+                        width=323,
+                    )
 
-            dpg.add_button(
-                label="Создать вкладку управления юнитами",
-                callback=create_unit_manage_tab,
-                width=423,
-                parent="main_btn_group",
-            )
+                with dpg.group():
+                    dpg.add_button(
+                        label="Состав",
+                        callback=create_unit_manage_tab,
+                        width=323,
+                    )
 
-            dpg.add_button(
-                label="System_control",
-                callback=create_system_tab,
-                show=ServerRequests.has_access("all"),
-                width=423,
-                parent="main_btn_group",
-            )
+                    dpg.add_button(
+                        label="System control",
+                        callback=create_system_tab,
+                        show=ServerRequests.has_access("all"),
+                        width=323,
+                    )
+
+    @classmethod
+    def _clear_login_password_value(cls):
+        AppConfig.set("remember_login", False)
+        AppConfig.pop("remember_login_value")
+        AppConfig.pop("remember_password_value")

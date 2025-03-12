@@ -4,7 +4,7 @@ from typing import Set
 import dearpygui.dearpygui as dpg
 import pyperclip
 from systems import AppConfig, ServerRequests
-from tools import TimerManager, ViewportResizeManager, create_error_popup
+from tools import TimerManager, ViewportResizeManager, create_popup_window
 
 # Бога тут нет. Нехер сюда смотреть. Это говнокод лютый
 
@@ -48,18 +48,14 @@ ACCESS_PRESETS = {
         "see_user_queue",
         "get_db_data",
         "register_user",
+        "doll_register",
         "change_user_data",
         "delete_user_data",
-        "register_user_can_approved",
-    },
-    "Доверенный сотрудник": {
-        "get_db_data",
-        "register_user",
-        "register_user_can_approved",
     },
     "Базовый сотрудник": {
         "get_db_data",
         "register_user",
+        "doll_register",
     },
     "Сотрудник на испытательном сроке": {
         "get_db_data",
@@ -102,14 +98,14 @@ ALL_ACCESS = {
         "Позволяет изменять записи в БД",
         None,
     ],
+    "doll_register": [
+        "Добавлять и удалять привязку кукл",
+        "Позволяет добавлять или удалять привязку кукл к владельцу",
+        None,
+    ],
     "delete_user_data": [
         "Удалять записи из БД",
         "Позволяет удалять записи из БД",
-        None,
-    ],
-    "register_user_can_approved": [
-        "Одобрять записи в БД",
-        "Позволяет подтверждать и одобрять добавленные в базу данные.",
         None,
     ],
     "register_user_need_approved": [
@@ -159,8 +155,16 @@ def create_unit_manage_tab():
         _render_units,
         AppConfig.server_data_update_time,
     )
+    TimerManager.add_timer("delete_rerender_units", _delete_on_hide, 5)
     _render_units()
     dpg.set_value("main_tab_bar", "unit_manage_tab")
+
+
+def _delete_on_hide():
+    if dpg.is_item_shown("unit_manage_tab") is False:
+        TimerManager.remove_timer("rerender_units")
+        TimerManager.remove_timer("delete_rerender_units")
+        dpg.delete_item("unit_manage_tab")
 
 
 def _res_cr_window(app_data):
@@ -223,7 +227,7 @@ def send_to_create():
     if "registration_token" in anser:
         dpg.set_value("tav_token", anser.get("registration_token"))
     else:
-        create_error_popup(
+        create_popup_window(
             "Ошибка создания Т.А.В.",
             "Попытка создать одинаковые ID кпк была отклонена сервером",
         )
@@ -417,7 +421,7 @@ def _open_salary(sender, app_data, user_data):
 
     data = ServerRequests.get_unit_info(user_data)
     if not data:
-        create_error_popup(
+        create_popup_window(
             "Ошибка получения данных",
             "Данные не были отправлены с сервера",
         )

@@ -3,7 +3,7 @@ from typing import Any
 import dearpygui.dearpygui as dpg
 import pyperclip
 from systems import AppConfig, ServerRequests
-from tools import ViewportResizeManager, create_error_popup
+from tools import ViewportResizeManager, create_popup_window, get_display_name
 
 
 def create_user_window(user_id: str) -> None:
@@ -11,7 +11,7 @@ def create_user_window(user_id: str) -> None:
 
     user_data = ServerRequests.get_user_info(user_id)
     if not user_data:
-        create_error_popup(
+        create_popup_window(
             "Ошибка получения данных",
             "Сервер не передал данные о выбранном клиенте",
         )
@@ -34,6 +34,7 @@ def create_user_window(user_id: str) -> None:
     place_of_birth = user_data.get("place_of_birth", None)
     specialization = user_data.get("specialization", None)
     goal = user_data.get("goal", None)
+    additional_info = user_data.get("additional_info", {})
 
     photo_path = ServerRequests.get_image(user_id)
     if photo_path:
@@ -67,7 +68,7 @@ def create_user_window(user_id: str) -> None:
             race=race,
         )
         _add_race_section(race)
-        _add_optional_sections(type=user_type, model=model, race=race)
+        _add_optional_sections(user_type=user_type, model=model, race=race)
         dpg.add_separator()
         _add_sex_section(sex)
         dpg.add_separator()
@@ -86,11 +87,58 @@ def create_user_window(user_id: str) -> None:
             specialization,
             "specialization",
         )
+        dpg.add_separator()
+        link_dolls = additional_info.get("link_dolls", None)
+        if link_dolls:
+            list_dolls_uuid = link_dolls.split(",")
+
+            with dpg.collapsing_header(label="Привязанные куклы"):
+                for doll_uuid in list_dolls_uuid:
+                    if doll_uuid:
+                        name = get_display_name(
+                            ServerRequests.get_user_names(doll_uuid)
+                        )
+                        with dpg.group(horizontal=True):
+                            dpg.add_button(
+                                label=name,
+                                callback=lambda s, a, u: create_user_window(u),
+                                user_data=doll_uuid,
+                            )
+                            dpg.add_button(
+                                label="X",
+                                show=ServerRequests.has_access("doll_register"),
+                                user_data=["owner", user_id, doll_uuid],
+                                callback=_unlinc_doll_owner,
+                            )
+
+        link_owners = additional_info.get("link_owners", None)
+        if link_owners:
+            list_owner_uuid = link_owners.split(",")
+
+            with dpg.collapsing_header(label="Привязанные командиры"):
+                for owner_uuid in list_owner_uuid:
+                    if owner_uuid:
+                        name = get_display_name(
+                            ServerRequests.get_user_names(owner_uuid)
+                        )
+                        with dpg.group(horizontal=True):
+                            dpg.add_button(
+                                label=name,
+                                callback=lambda s, a, u: create_user_window(u),
+                                user_data=owner_uuid,
+                            )
+                            dpg.add_button(
+                                label="X",
+                                show=ServerRequests.has_access("doll_register"),
+                                user_data=["doll", user_id, owner_uuid],
+                                callback=_unlinc_doll_owner,
+                            )
+
         with dpg.group(horizontal=True, tag="see_close_btn"):
             dpg.add_button(label="Закрыть", callback=_delete_window)
             dpg.add_button(
                 label="Удалить запись",
-                callback=_delete_record,
+                callback=_open_del_window,
                 user_data=user_id,
                 show=ServerRequests.has_access("delete_user_data"),
             )
@@ -118,6 +166,22 @@ def create_user_window(user_id: str) -> None:
     ViewportResizeManager.add_callback("user_window_see", _resize_callback)
 
 
+def _unlinc_doll_owner(sender, app_data, user_data) -> None:
+    req_type = user_data[0]
+    if req_type == "doll":
+        owner_uuid = user_data[2]
+        doll_uuid = user_data[1]
+    elif req_type == "owner":
+        owner_uuid = user_data[1]
+        doll_uuid = user_data[2]
+    else:
+        return
+
+    code = ServerRequests.remove_doll_reg(owner_uuid=owner_uuid, doll_uuid=doll_uuid)
+    if code == 200:
+        create_user_window(user_data[1])
+
+
 def _resize_callback(app_data):
     item_width = app_data[2] / 2
     dpg.set_item_pos("user_window_see_2", [item_width, 0])
@@ -139,12 +203,6 @@ def _delete_window():
     for tag in ["user_window_see_1", "user_window_see_2", "user_texture"]:
         if dpg.does_item_exist(tag):
             dpg.delete_item(tag)
-
-
-def _delete_record(sender, app_data, user_data):
-    code = ServerRequests.delete_user_data(user_data)
-    if code == 200:
-        _delete_window()
 
 
 def _add_uuid_section(user_id: str):
@@ -183,8 +241,7 @@ def _add_info_table(
     ):
         dpg.add_table_column(label=name_label_rus)
         dpg.add_table_column(label=name_label_eng)
-        if not race == "doll":
-            dpg.add_table_column(label="Позывной:")
+        dpg.add_table_column(label="Позывной:")
 
         with dpg.table_row():
             name_rus = name_rus if name_rus else "Отсутствует"
@@ -193,24 +250,23 @@ def _add_info_table(
                 name_rus,
                 wrap=0,
             )
-            _add_ch_container_text(dpg.last_item(), name_rus, "nameRus")
+            _add_ch_container_text(dpg.last_item(), name_rus, "name_rus")
 
             dpg.add_text(
                 name_eng,
                 wrap=0,
             )
-            _add_ch_container_text(dpg.last_item(), name_eng, "nameEng")
+            _add_ch_container_text(dpg.last_item(), name_eng, "name_eng")
 
-            if not race == "doll":
-                dpg.add_text(
-                    name_cs if name_cs else "Отсутствует",
-                    wrap=0,
-                )
-                _add_ch_container_text(
-                    dpg.last_item(),
-                    name_cs if name_cs else "Отсутствует",
-                    "cs",
-                )
+            dpg.add_text(
+                name_cs if name_cs else "Отсутствует",
+                wrap=0,
+            )
+            _add_ch_container_text(
+                dpg.last_item(),
+                name_cs if name_cs else "Отсутствует",
+                "name_cs",
+            )
 
 
 def _add_race_section(race: str | None):
@@ -228,10 +284,10 @@ def _add_race_section(race: str | None):
         )
 
 
-def _add_optional_sections(type: str | None, model: str | None, race):
+def _add_optional_sections(user_type: str | None, model: str | None, race):
     if race != "human":
         label = "Тип куклы:" if race == "doll" else "Тип полулюда:"
-        user_type_field = type if type else "Не указано"
+        user_type_field = user_type if user_type else "Не указано"
         with dpg.group(horizontal=True) as gr:
             dpg.add_text(label)
             dpg.add_text(
@@ -334,3 +390,55 @@ def _ch_callback(value: Any, tag_to_ch: str) -> None:
 
     ServerRequests.change_user_data(user_uuid, **{tag_to_ch: value})
     create_user_window(user_uuid)
+
+
+def _res_del_window(app_data):
+    dpg.set_item_pos(
+        "del_user_window",
+        [(app_data[2] - 400) * 0.5, (app_data[3] - 200) * 0.5],
+    )
+    dpg.set_item_pos("del_unit_btns", [(400 - 168) * 0.5, 60])
+
+
+def _close_del_window():
+    ViewportResizeManager.remove_callback("del_user_window")
+    if dpg.does_item_exist("del_user_window"):
+        dpg.delete_item("del_user_window")
+
+
+def _open_del_window(sender, app_data, user_data):
+    _close_del_window()
+
+    with dpg.window(
+        tag="del_user_window",
+        no_title_bar=True,
+        no_move=True,
+        no_resize=True,
+        height=200,
+        width=400,
+        pos=[0, 0],
+    ):
+        dpg.add_text("Вы точно хотите удалить эту запись?")
+        with dpg.group(horizontal=True):
+            dpg.add_text("Данную операцию")
+            dpg.add_text("невозможно", color=AppConfig.attention_color)
+            dpg.add_text("будет откатить")
+
+        with dpg.group(horizontal=True, tag="del_unit_btns"):
+            dpg.add_button(
+                label="Да",
+                callback=_on_del_conf,
+                user_data=user_data,
+                width=80,
+            )
+            dpg.add_button(label="Нет", callback=_close_del_window, width=80)
+
+    ViewportResizeManager.add_callback("del_user_window", _res_del_window)
+
+
+def _on_del_conf(sender, app_data, user_data):
+    ServerRequests.delete_user(user_data)
+    _close_del_window()
+    code = ServerRequests.delete_user_data(user_data)
+    if code == 200:
+        _delete_window()
