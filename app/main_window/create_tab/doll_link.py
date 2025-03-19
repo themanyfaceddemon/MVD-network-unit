@@ -14,15 +14,15 @@ def create_doll_link():
 
     dpg.add_input_text(
         parent="dynamic_fields",
-        hint="UUID куклы",
-        tag="input_doll_UUID",
+        hint="UUID командира",
+        tag="input_comand_UUID",
         width=0,
     )
 
     dpg.add_input_text(
         parent="dynamic_fields",
-        hint="UUID командира",
-        tag="input_comand_UUID",
+        hint="UUID куклы",
+        tag="input_doll_UUID",
         width=0,
     )
 
@@ -54,6 +54,8 @@ def _submit(sender, app_data, user_data) -> None:
     status_code = ServerRequests.add_doll_reg(comand_UUID, doll_UUID)
     if status_code == 200:
         create_popup_window("Успешно", "Запись успешно создана")
+        dpg.set_value("input_doll_UUID", "")
+        dpg.set_value("input_comand_UUID", "")
         return
 
     {

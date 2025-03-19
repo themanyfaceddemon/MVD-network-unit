@@ -1,16 +1,27 @@
 import re
 import tempfile
+from io import BytesIO
 from pathlib import Path
 
 import dearpygui.dearpygui as dpg
-from PIL import ImageGrab
+import pyperclip
+import requests
+from PIL import Image, ImageGrab
 from systems import AppConfig, ServerRequests
-from tools import create_popup_window
+from tools import create_popup_window, set_and_hide
 
 img_data_path = None
 
 
 def create_mercenarie():
+    if not ServerRequests.has_access("register_user"):
+        dpg.add_text(
+            "Доступ к созданию регистраций отклонён",
+            parent="dynamic_fields",
+            wrap=0,
+        )
+        return
+
     dpg.add_combo(
         [
             "Кукла",
@@ -77,12 +88,12 @@ def _add_db_doll():
             ]:
                 dpg.add_button(
                     label=model,
-                    callback=_set_and_hide,
+                    callback=set_and_hide,
                     user_data=("input_model", model, con),
                 )
 
     dpg.add_separator(parent="add_db_fields")
-    _add_add_info()
+    _add_add_info("Место производства")
     dpg.add_separator(parent="add_db_fields")
     _add_img()
     dpg.add_button(
@@ -151,10 +162,10 @@ def _add_sex_field():
     )
 
 
-def _add_add_info():
+def _add_add_info(hint: str = "Место рождения"):
     with dpg.group(horizontal=True, parent="add_db_fields"):
         dpg.add_input_text(
-            hint="Место рождения",
+            hint=hint,
             tag="input_pob",
         )
         dpg.add_button(label="...")
@@ -162,7 +173,7 @@ def _add_add_info():
             for contry in ["НСССР", "Германия", "Англия", "США", "Китай", "Япония"]:
                 dpg.add_button(
                     label=contry,
-                    callback=_set_and_hide,
+                    callback=set_and_hide,
                     user_data=("input_pob", contry, con),
                 )
 
@@ -182,7 +193,7 @@ def _add_add_info():
             ]:
                 dpg.add_button(
                     label=spec,
-                    callback=_set_and_hide,
+                    callback=set_and_hide,
                     user_data=("input_spec", spec, con),
                 )
 
@@ -196,14 +207,11 @@ def _add_add_info():
             for goal in ["Заработок", "Работа", "ПМЖ"]:
                 dpg.add_button(
                     label=goal,
-                    callback=_set_and_hide,
+                    callback=set_and_hide,
                     user_data=("input_goal", goal, con),
                 )
 
 
-def _set_and_hide(sender, app_data, user_data):
-    dpg.set_value(user_data[0], user_data[1])
-    dpg.hide_item(user_data[2])
 
 
 def _add_img():
@@ -217,29 +225,60 @@ def _add_img():
     )
     with dpg.group(horizontal=True, parent="add_db_fields"):
         dpg.add_text("Статус:")
-        dpg.add_text("Не загружено", tag="img_status", color=AppConfig.red_color)
+        dpg.add_text(
+            "Не загружено",
+            tag="img_status",
+            color=AppConfig.red_color,
+            wrap=0,
+        )
+
+
+def _is_valid_image_url(url: str):
+    return re.match(r"^https?://.*\.(png|jpg|jpeg|webp)(\?.*)?$", url, re.IGNORECASE)
 
 
 def _load_img_to_create():
-    image = ImageGrab.grabclipboard()
+    try:
+        img = ImageGrab.grabclipboard()
 
-    if isinstance(image, list):
+        if img is None:
+            clipboard_text = pyperclip.paste()
+
+            if clipboard_text and _is_valid_image_url(clipboard_text):
+                response = requests.get(clipboard_text, timeout=5)
+                response.raise_for_status()
+                img = Image.open(BytesIO(response.content))
+
+        elif isinstance(img, list):
+            file_path = Path(img[0])
+            if file_path.is_file():
+                img = Image.open(file_path)
+            else:
+                raise ValueError(
+                    "Предоставленные данные в буффере обмена не могут быть индифицированны как изображение."
+                )
+
+        if img is None:
+            raise ValueError(
+                "Предоставленные данные в буффере обмена не могут быть индифицированны как изображение."
+            )
+
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            img.save(tmp, format="PNG")
+            global img_data_path
+            img_data_path = Path(tmp.name)
+
+        dpg.configure_item("img_status", color=AppConfig.green_color)
+        dpg.set_value("img_status", "Успешно загружено")
+
+    except Exception as e:
         dpg.configure_item("img_status", color=AppConfig.red_color)
-        dpg.set_value("img_status", "Информация в буффере не является изображением")
-        return
+        error_msg = f"Ошибка: {str(e)}"
 
-    if image is None:
-        dpg.configure_item("img_status", color=AppConfig.red_color)
-        dpg.set_value("img_status", "Изображение не обнаружено")
-        return
+        if "http" in str(e):
+            error_msg += "\nИспользуйте прямую ссылку на изображение!"
 
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-        image.save(tmp, format="PNG")
-        global img_data_path
-        img_data_path = Path(tmp.name)
-
-    dpg.configure_item("img_status", color=AppConfig.green_color)
-    dpg.set_value("img_status", "Успешно загружено")
+        dpg.set_value("img_status", error_msg)
 
 
 def _has_cyrillic(text: str) -> bool:

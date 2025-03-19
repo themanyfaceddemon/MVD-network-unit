@@ -81,9 +81,8 @@ class AppMainWindow:
                     )
 
                     dpg.add_button(
-                        label="Создание и регистрация",
+                        label="Конструктор данных",
                         callback=create_create_tab,
-                        show=ServerRequests.has_access("register_user"),
                         width=323,
                     )
 

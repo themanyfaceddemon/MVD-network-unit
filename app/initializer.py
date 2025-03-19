@@ -30,6 +30,7 @@ class AppInitializer:
             min_width=800,
             height=600,
             min_height=600,
+            vsync=True,
         )
         dpg.set_viewport_small_icon(str(AppConfig.img_fold / "mvd-red.ico"))
         dpg.set_viewport_large_icon(str(AppConfig.img_fold / "mvd-red.ico"))
@@ -41,11 +42,23 @@ class AppInitializer:
 
     @classmethod
     def _reg_static_img(cls):
-        width, height, _, data = dpg.load_image(
-            str(AppConfig.img_fold / "mvd 256x256.png")
-        )
-        with dpg.texture_registry():
-            dpg.add_static_texture(width, height, data, tag="mvd_img_256_256")
+        for file in [
+            "ws 256x256.png",
+            "404 256x256.png",
+            "bartender 256x256.png",
+            "deffy 256x256.png",
+            "mercenary 256x256.png",
+            "mvd 256x256.png",
+            "raptor 256x256.png",
+            "sf 256x256.png",
+            "svarog 256x256.png",
+            "ums 256x256.png",
+        ]:
+            _, _, _, data = dpg.load_image(str(AppConfig.img_fold / file))
+            with dpg.texture_registry():
+                dpg.add_static_texture(
+                    256, 256, data, tag=f"{file.split()[0]}_img_logo"
+                )
 
     @classmethod
     def _setup_default_theme(cls):

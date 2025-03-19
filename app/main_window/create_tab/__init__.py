@@ -1,11 +1,15 @@
 import dearpygui.dearpygui as dpg
 
-from .mercenaries_create import create_mercenarie
 from .doll_link import create_doll_link
+from .information_create import create_information
+from .license_create import create_license
+from .mercenaries_create import create_mercenarie
 
 CREATE_TAB_ITEMS = {
     "Добавление регистрации в базу данных": create_mercenarie,
     "Привязка куклы": create_doll_link,
+    "Ввод дополнительных данных": create_information,
+    "Создание лицензий": create_license,
 }
 
 

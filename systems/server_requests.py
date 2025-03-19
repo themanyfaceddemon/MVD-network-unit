@@ -15,7 +15,7 @@ class ServerRequests:
     _base_url: Final[str] = "http://194.87.94.191:7000"
 
     _session = requests.Session()
-    _session.headers.update({"X-App-Version": "1.0.2"})
+    _session.headers.update({"X-App-Version": "1.0.3"})
 
     _access: Set[str] = set()
 
@@ -293,17 +293,17 @@ class ServerRequests:
         return resp.json()
 
     @classmethod
-    def get_user_names(cls, user_id: str) -> Dict[str, str]:
+    def get_user_names(cls, user_uuid: str) -> Dict[str, str]:
         resp = cls._session.get(
-            cls._base_url + "/user/data/names", params={"user_id": user_id}
+            cls._base_url + "/user/data/names", params={"user_id": user_uuid}
         )
 
         return resp.json()
 
     @classmethod
-    def get_user_info(cls, user_id: str) -> Dict[str, Any] | None:
+    def get_user_info(cls, user_uuid: str) -> Dict[str, Any] | None:
         resp = cls._session.get(
-            cls._base_url + "/user/data/info", params={"user_id": user_id}
+            cls._base_url + "/user/data/info", params={"user_id": user_uuid}
         )
 
         if resp.status_code == 200:
@@ -377,10 +377,10 @@ class ServerRequests:
         return response.status_code
 
     @classmethod
-    def delete_user_data(cls, user_id: str) -> int:
+    def delete_user_data(cls, user_uuid: str) -> int:
         response = cls._session.post(
             cls._base_url + "/user/data/delete",
-            json={"user_id": user_id},
+            json={"user_id": user_uuid},
         )
 
         return response.status_code
@@ -399,6 +399,30 @@ class ServerRequests:
         response = cls._session.post(
             cls._base_url + "/user/additional_data/doll_register/remove",
             json={"owner_uuid": owner_uuid, "doll_uuid": doll_uuid},
+        )
+
+        return response.status_code
+
+    @classmethod
+    def chenge_fraction(
+        cls,
+        user_uuid: str,
+        new_fraction: Literal[
+            "ws",
+            "404",
+            "bartender",
+            "deffy",
+            "mercenary",
+            "mvd",
+            "raptor",
+            "sf",
+            "svarog",
+            "ums",
+        ],
+    ) -> int:
+        response = cls._session.post(
+            cls._base_url + "/user/additional_data/fraction",
+            json={"user_uuid": user_uuid, "new_fraction": new_fraction},
         )
 
         return response.status_code

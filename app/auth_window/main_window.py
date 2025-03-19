@@ -95,7 +95,7 @@ class AuthWindow:
             with dpg.tooltip(dpg.last_item()):
                 dpg.add_text("Автоматически входит в систему")
 
-            dpg.add_image("mvd_img_256_256", tag="login_logo")
+            dpg.add_image("mvd_img_logo", tag="login_logo")
             ViewportResizeManager.add_callback("login_window", cls._res_login_callback)
 
     @classmethod
@@ -218,7 +218,7 @@ class AuthWindow:
                     width=200,
                 )
 
-            dpg.add_image("mvd_img_256_256", tag="tae_logo")
+            dpg.add_image("mvd_img_logo", tag="tae_logo")
 
         ViewportResizeManager.add_callback("tae_window", cls._res_tae_callback)
 

@@ -1,6 +1,7 @@
 import dearpygui.dearpygui as dpg
+from structures import get_display_name
 from systems import AppConfig, ServerRequests
-from tools import TimerManager, get_display_name
+from tools import TimerManager
 
 from .user_window import create_user_window
 
