@@ -25,114 +25,7 @@ def create_user_window(user_id: str) -> None:
         )
         return
 
-    # region слева сверху окно
-    with dpg.window(
-        tag="user_window_main_data",
-        no_move=True,
-        no_resize=True,
-        no_title_bar=True,
-    ):
-        # region Фото фракции
-        dpg.add_image(
-            f"{CUR_USER_DATA.fraction_raw}_img_logo",
-            tag="user_registration_fraction",
-        )
-        if ServerRequests.has_access("fraction_control"):
-            _image_ch(dpg.last_item())
-        # endregion
-
-        # region ФИО
-        with dpg.table(
-            tag="user_window_main_data_ind_table",
-            borders_innerH=True,
-            borders_innerV=True,
-            borders_outerH=True,
-            borders_outerV=True,
-            header_row=True,
-        ):
-            dpg.add_table_column(label="ФИО (Rus)")
-            dpg.add_table_column(label="ФИО (Eng)")
-            dpg.add_table_column(label="Позывной")
-
-            with dpg.table_row():
-                dpg.add_text(CUR_USER_DATA.name_rus, wrap=0)
-                _ch_text(dpg.last_item(), _ch_name_rus, "")
-
-                dpg.add_text(CUR_USER_DATA.name_eng, wrap=0)
-                _ch_text(dpg.last_item(), _ch_name_eng, "")
-
-                dpg.add_text(CUR_USER_DATA.name_cs, wrap=0)
-                _ch_text(dpg.last_item(), _ch_name_cs, "")
-        # endregion
-
-        # region Базовая физическая информация
-        with dpg.group(horizontal=True):
-            with dpg.group():
-                dpg.add_text(f"Раса: {CUR_USER_DATA.race}", tag="user_data_race")
-                _ch_combo(
-                    dpg.last_item(),
-                    ["Человек", "Полу-человек", "Кукла"],
-                    CUR_USER_DATA.race,
-                    _ch_race,
-                )
-
-                if CUR_USER_DATA.race_raw != "human":
-                    dpg.add_text(f"Тип: {CUR_USER_DATA.user_type}")
-                    _ch_text(dpg.last_item(), _ch_user_type, "Тип: ")
-
-                    if CUR_USER_DATA.race_raw == "doll":
-                        dpg.add_text(f"Модель: {CUR_USER_DATA.model}")
-                        _ch_text(dpg.last_item(), _ch_model, "Модель: ")
-
-            dpg.add_text("|")
-
-            with dpg.group():
-                with dpg.group(horizontal=True):
-                    dpg.add_text("Пол:")
-                    dpg.add_text(
-                        CUR_USER_DATA.sex,
-                        color=CUR_USER_DATA.sex_color,
-                        tag="user_data_sex",
-                    )
-                    _ch_combo(
-                        dpg.last_item(),
-                        ["Женский", "Мужской"],
-                        CUR_USER_DATA.sex,
-                        _ch_sex,
-                    )
-
-        dpg.add_text("------")
-
-        with dpg.group(horizontal=True):
-            dpg.add_text("Статус:")
-            dpg.add_text(
-                CUR_USER_DATA.status,
-                color=CUR_USER_DATA.status_color,
-                tag="user_data_status",
-            )
-            _ch_combo(
-                dpg.last_item(),
-                CUR_USER_DATA.list_status,
-                CUR_USER_DATA.status,
-                _ch_status,
-            )
-        # endregion
-
-        # region UUID
-        with dpg.group(horizontal=True, tag="uuid_user_group"):
-            dpg.add_text("UUID:")
-            dpg.add_text(
-                CUR_USER_DATA.user_uuid.partition("-")[0] + "...",
-                color=AppConfig.uuid_color,
-            )
-
-        dpg.add_button(
-            label="Скопировать",
-            tag="uuid_user_copy_btn",
-            callback=lambda: pyperclip.copy(CUR_USER_DATA.user_uuid),
-        )
-        # endregion
-    # endregion
+    recreate_user_window_main_data()
 
     # region слева снизу окно
     with dpg.window(
@@ -201,6 +94,145 @@ def create_user_window(user_id: str) -> None:
     # endregion
 
     ViewportResizeManager.add_callback("user_window", _resize_callback)
+
+
+def recreate_user_window_main_data():
+    global CUR_USER_DATA
+
+    if dpg.does_item_exist("user_window_main_data"):
+        dpg.delete_item("user_window_main_data")
+
+    with dpg.window(
+        tag="user_window_main_data",
+        no_move=True,
+        no_resize=True,
+        no_title_bar=True,
+    ):
+        dpg.add_image(
+            f"{CUR_USER_DATA.fraction_raw}_img_logo",
+            tag="user_registration_fraction",
+        )
+        if ServerRequests.has_access("fraction_control"):
+            _image_ch(dpg.last_item())
+
+        with dpg.table(
+            tag="user_window_main_data_ind_table",
+            borders_innerH=True,
+            borders_innerV=True,
+            borders_outerH=True,
+            borders_outerV=True,
+            header_row=True,
+        ):
+            dpg.add_table_column(label="ФИО (Rus)")
+            dpg.add_table_column(label="ФИО (Eng)")
+            dpg.add_table_column(label="Позывной")
+
+            with dpg.table_row():
+                dpg.add_text(CUR_USER_DATA.name_rus, wrap=0)
+                _ch_text(dpg.last_item(), "", "name_rus", CUR_USER_DATA.name_rus)
+
+                dpg.add_text(CUR_USER_DATA.name_eng, wrap=0)
+                _ch_text(dpg.last_item(), "", "name_eng", CUR_USER_DATA.name_eng)
+
+                dpg.add_text(CUR_USER_DATA.name_cs, wrap=0)
+                _ch_text(dpg.last_item(), "", "name_cs", CUR_USER_DATA.name_cs)
+
+        with dpg.group(horizontal=True):
+            dpg.add_text(f"Раса: {CUR_USER_DATA.race}", tag="user_data_race")
+            _ch_combo(
+                dpg.last_item(),
+                ["Человек", "Полу-человек", "Кукла"],
+                CUR_USER_DATA.race,
+                _ch_race,
+            )
+            dpg.add_text("|")
+
+            dpg.add_text("Пол:")
+            dpg.add_text(
+                CUR_USER_DATA.sex,
+                color=CUR_USER_DATA.sex_color,
+                tag="user_data_sex",
+            )
+            _ch_combo(
+                dpg.last_item(),
+                ["Женский", "Мужской"],
+                CUR_USER_DATA.sex,
+                _ch_sex,
+            )
+
+        if CUR_USER_DATA.race_raw != "human":
+            dpg.add_text(f"Тип: {CUR_USER_DATA.user_type}")
+            _ch_text(dpg.last_item(), "Тип: ", "user_type", CUR_USER_DATA.user_type)
+
+            if CUR_USER_DATA.race_raw == "doll":
+                dpg.add_text(f"Модель: {CUR_USER_DATA.model}")
+                _ch_text(dpg.last_item(), "Модель: ", "model", CUR_USER_DATA.model)
+
+        dpg.add_text("------")
+
+        with dpg.group(horizontal=True):
+            dpg.add_text("Статус:")
+            dpg.add_text(
+                CUR_USER_DATA.status,
+                color=CUR_USER_DATA.status_color,
+                tag="user_data_status",
+            )
+            _ch_combo(
+                dpg.last_item(),
+                CUR_USER_DATA.list_status,
+                CUR_USER_DATA.status,
+                _ch_status,
+            )
+
+        dpg.add_text("------")
+
+        dpg.add_text(
+            f"Место {'рождения' if CUR_USER_DATA.race_raw != 'doll' else 'производства'}: {CUR_USER_DATA.place_of_birth}",
+            wrap=0,
+        )
+        _ch_text(
+            dpg.last_item(),
+            f"Место {'рождения' if CUR_USER_DATA.race_raw != 'doll' else 'производства'}: ",
+            "place_of_birth",
+            CUR_USER_DATA.place_of_birth,
+        )
+
+        dpg.add_text(
+            f"Специализация: {CUR_USER_DATA.specialization}",
+            wrap=0,
+        )
+        _ch_text(
+            dpg.last_item(),
+            "Специализация: ",
+            "specialization",
+            CUR_USER_DATA.specialization,
+        )
+
+        dpg.add_text(
+            f"Цель прибытия в сектор: {CUR_USER_DATA.goal}",
+            wrap=0,
+        )
+        _ch_text(
+            dpg.last_item(),
+            "Цель прибытия в сектор: ",
+            "goal",
+            CUR_USER_DATA.goal,
+        )
+
+        with dpg.group(horizontal=True, tag="uuid_user_group"):
+            dpg.add_text("UUID:")
+            dpg.add_text(
+                CUR_USER_DATA.user_uuid.partition("-")[0] + "...",
+                color=AppConfig.uuid_color,
+            )
+
+        dpg.add_button(
+            label="Скопировать",
+            tag="uuid_user_copy_btn",
+            callback=lambda: pyperclip.copy(CUR_USER_DATA.user_uuid),
+        )
+        
+    ViewportResizeManager.invoke()
 
 
 # region Для доп инфы колбеки
@@ -424,65 +456,33 @@ def _fraction_ch(sender, app_data, user_data):
 
 
 # region смена текста
-def _ch_text(parent: str | int, callback, add_to_tag: str | int) -> None:
+def _ch_text(
+    parent: str | int,
+    add_to_tag: str | int,
+    field_name: str,
+    default_value: str,
+) -> None:
+    def callback(sender, app_data, user_data):
+        global CUR_USER_DATA
+        item_id, prefix, value_id, field_name = user_data
+
+        setattr(CUR_USER_DATA, f"_{field_name}", app_data)
+        ServerRequests.change_user_data(
+            CUR_USER_DATA.user_uuid, **{field_name: app_data}
+        )
+
+        app_data = app_data or "Не указано"
+        dpg.set_value(value_id, f"{prefix}{app_data}")
+        dpg.hide_item(item_id)
+
     with dpg.popup(parent) as gr:
         dpg.add_text("Смена значений:")
         dpg.add_input_text(
             on_enter=True,
             callback=callback,
-            user_data=(gr, add_to_tag, parent),
+            default_value=default_value,
+            user_data=(gr, add_to_tag, parent, field_name),
         )
-
-
-# Похорошему надо сделать один метод, а не 500 методов
-def _ch_name_rus(sender, app_data, user_data) -> None:
-    CUR_USER_DATA._name_rus = app_data
-    ServerRequests.change_user_data(CUR_USER_DATA.user_uuid, name_rus=app_data)
-    if not app_data:
-        app_data = "Не указано"
-
-    dpg.set_value(user_data[2], f"{user_data[1]}{app_data}")
-    dpg.hide_item(user_data[0])
-
-
-def _ch_name_eng(sender, app_data, user_data) -> None:
-    CUR_USER_DATA._name_eng = app_data
-    ServerRequests.change_user_data(CUR_USER_DATA.user_uuid, name_eng=app_data)
-    if not app_data:
-        app_data = "Не указано"
-
-    dpg.set_value(user_data[2], f"{user_data[1]}{app_data}")
-    dpg.hide_item(user_data[0])
-
-
-def _ch_name_cs(sender, app_data, user_data) -> None:
-    CUR_USER_DATA._name_cs = app_data
-    ServerRequests.change_user_data(CUR_USER_DATA.user_uuid, name_cs=app_data)
-    if not app_data:
-        app_data = "Не указано"
-
-    dpg.set_value(user_data[2], f"{user_data[1]}{app_data}")
-    dpg.hide_item(user_data[0])
-
-
-def _ch_user_type(sender, app_data, user_data) -> None:
-    CUR_USER_DATA._user_type = app_data
-    ServerRequests.change_user_data(CUR_USER_DATA.user_uuid, user_type=app_data)
-    if not app_data:
-        app_data = "Не указано"
-
-    dpg.set_value(user_data[2], f"{user_data[1]}{app_data}")
-    dpg.hide_item(user_data[0])
-
-
-def _ch_model(sender, app_data, user_data) -> None:
-    CUR_USER_DATA._model = app_data
-    ServerRequests.change_user_data(CUR_USER_DATA.user_uuid, model=app_data)
-    if not app_data:
-        app_data = "Не указано"
-
-    dpg.set_value(user_data[2], f"{user_data[1]}{app_data}")
-    dpg.hide_item(user_data[0])
 
 
 # endregion
@@ -533,11 +533,7 @@ def _ch_race(sender, app_data, user_data) -> None:
         )
         return
     else:
-        # бубубу. Я заебалась работать. Пойду обнову выкачу.
-        create_popup_window(
-            "Успешно",
-            "Данные успешно обновлены. Для обновления интерфейса просьба перезапросить информацию",
-        )
+        recreate_user_window_main_data()
 
     dpg.set_value("user_data_race", f"Раса: {CUR_USER_DATA.race}")
     dpg.hide_item(user_data)
